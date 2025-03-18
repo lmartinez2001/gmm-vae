@@ -2,6 +2,7 @@ data/
 __pycache__/
 .ipynb_checkpoints/
 results/*
+!results/.gitkeep
 *temp*/
 export.gmm
 .vscode/
