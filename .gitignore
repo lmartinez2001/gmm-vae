@@ -1,0 +1,12 @@
+data/
+__pycache__/
+.ipynb_checkpoints/
+results/*
+*temp*/
+export.gmm
+.vscode/
+.venv/
+*.npy
+*.pt
+*.pth
+*.json
