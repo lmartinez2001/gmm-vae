@@ -30,12 +30,12 @@ def train_epoch(model: nn.Module, train_loader: DataLoader, optimizer, epoch: in
     epoch_loss = 0
     epoch_recon_loss = 0
     epoch_mw2_loss = 0
-
+    tau = max(0.1, 1.0 * np.exp(-0.001 * epoch))
     for batch_idx, (data, _) in tqdm(enumerate(train_loader), total=len(train_loader)):
         data = data.to(device)
         optimizer.zero_grad()
         
-        recon_batch, means, log_vars, weights, z, components = model(data)
+        recon_batch, means, log_vars, weights, z, components = model(data, tau)
         
         recon_loss = nn.BCELoss(reduction="mean")(recon_batch, rearrange(data, "b c h w -> b (c h w)"))
         
