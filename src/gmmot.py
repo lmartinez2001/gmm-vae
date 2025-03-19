@@ -53,6 +53,8 @@ def gmm_w2_distance(means1, covs1, weights1, means2, covs2, weights2):
         
         # Compute OT cost for this sample
         dist = ot.emd2(w1_np, w2_np, cost_np)
+        # dist = ot.emd2(sample_weights1, weights2, cost_matrix)
         total_dist += dist
 
     return torch.tensor(total_dist/batch_size, dtype=means1.dtype, device=means1.device)
+    # return total_dist/batch_size

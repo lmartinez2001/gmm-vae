@@ -16,7 +16,7 @@ from gmmvae import GMMVAE
 from gmmot import gmm_w2_distance
 
 from einops import rearrange
-from utils import save_params
+from utils import *
 
 torch.manual_seed(0)
 
@@ -37,7 +37,7 @@ def train_epoch(model: nn.Module, train_loader: DataLoader, optimizer, epoch: in
         
         recon_batch, means, log_vars, weights, z, components = model(data)
         
-        recon_loss = nn.BCELoss(reduction='sum')(recon_batch, rearrange(data, "b c h w -> b (c h w)"))
+        recon_loss = nn.BCELoss(reduction="mean")(recon_batch, rearrange(data, "b c h w -> b (c h w)"))
         
         covs = torch.exp(log_vars)
         
@@ -74,11 +74,12 @@ if __name__ == "__main__":
     input_dim = 784
     latent_dim = 2
     n_components = 10
-    n_epochs = 20
+    n_epochs = 40
     lr = 0.001
     batch_size = 256
-    sample_interval = 5
     beta = 1.0
+    sample_interval = 5
+    subset_ratio = 3
 
     save_root = os.path.join("results", str(uuid.uuid1()))
     os.makedirs(save_root)
@@ -86,20 +87,20 @@ if __name__ == "__main__":
     save_params(root_path=save_root,
                 input_dim=input_dim,
                 latent_dim=latent_dim,
-                n_components=n_components
+                n_components=n_components,
+                beta=beta,
+                training_samples=60000//subset_ratio
                 )
     
     transform = T.Compose([
         T.ToTensor()
     ])
     
-    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    train_size = len(train_dataset)
-    n_train_samples = train_size // 2
-    train_indices = np.random.choice(train_size, n_train_samples, replace=False)
-    reduced_train_dataset = Subset(train_dataset, train_indices)
 
-    train_loader = DataLoader(reduced_train_dataset, batch_size=batch_size, shuffle=True)
+    train_dataset, test_dataset = load_MNIST("./data", subset_ratio=3)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     model = GMMVAE(input_dim=input_dim,
                    latent_dim=latent_dim,
@@ -109,22 +110,30 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     all_losses = {
-        'total': [],
-        'recon': [],
-        'mw2': []
+        "total": [],
+        "recon": [],
+        "mw2": []
     }
     
     with tqdm(total=n_epochs, desc="Training", unit="epoch") as pbar:
         for epoch in range(n_epochs):
             epoch_loss, epoch_recon, epoch_mw2 = train_epoch(model, train_loader, optimizer, epoch, device, beta=beta)
+            all_losses["total"].append(epoch_loss)
+            all_losses["recon"].append(epoch_recon)
+            all_losses["mw2"].append(epoch_mw2)
+            
+            # ==> Sampling to check progression
+            if (epoch % sample_interval == 0) or (epoch == n_epochs-1):
+                visualize(model=model,
+                          test_loader=test_loader,
+                          save_path=save_root, 
+                          device=device, 
+                          epoch=epoch)
+                save_model(save_path=save_root, model=model, epoch=epoch)
             pbar.set_postfix({"Loss": f"{epoch_loss:.2f}"})
             pbar.update(1)
 
     # Save losses
-    np.save(os.path.join(save_root, 'losses.npy'), all_losses)
-
-    # Save final model state
-    model_path = os.path.join(save_root, 'model.pt')
-    torch.save(model.state_dict(), model_path)
+    save_losses(save_root, all_losses)
 
     print(f"Training completed. Results saved to {save_root}")
