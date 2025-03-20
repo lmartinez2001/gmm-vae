@@ -74,16 +74,16 @@ if __name__ == "__main__":
     latent_dim = 2
     n_components = 10
     components_init = "random"
-    circle_radius = 3
+    circle_radius = 3.0
     to_predict = ["weights"]
-    prior_cov = 1.0
+    prior_cov = 1.0 # Covariance of the prior
     # For training
     n_epochs = 40
     lr = 0.001
     batch_size = 256
     beta = 10.0 # Weight of the MW2 loss
     sample_interval = 5
-    subset_ratio = 3 # Subset of the full dataset
+    subset_ratio = 30 # Subset of the full dataset
 
     save_root = os.path.join("results", str(uuid.uuid1()))
     os.makedirs(save_root)
@@ -103,7 +103,7 @@ if __name__ == "__main__":
                 sample_interval=sample_interval,
                 training_samples=60000//subset_ratio)    
 
-    train_dataset, test_dataset = load_MNIST("./data", subset_ratio=3)
+    train_dataset, test_dataset = load_MNIST("./data", subset_ratio=subset_ratio)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)

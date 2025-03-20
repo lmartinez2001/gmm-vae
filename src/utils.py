@@ -96,5 +96,5 @@ def visualize(model: nn.Module, save_path: str, test_loader: DataLoader, device:
     # One with axis
     plt.figure(figsize=(10,10))
     plt.scatter(to_show[:,1], to_show[:,0], c=c, cmap="tab10", alpha=0.3, s=1)
-    plt.savefig(os.path.join(save_path, f"test_set_latent_epoch{epoch}.png"), bbox_inches='tight', transparent=True, pad_inches=0.0, dpi=300)
+    plt.savefig(os.path.join(save_path, f"test_set_latent_epoch{epoch}_axis.png"), bbox_inches='tight', transparent=True, pad_inches=0.0, dpi=300)
     plt.close()

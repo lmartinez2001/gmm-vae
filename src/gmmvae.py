@@ -1,11 +1,7 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-import numpy as np
-from scipy.optimize import linear_sum_assignment
-from einops import rearrange
+from einops import rearrange, repeat
 
 class GMMVAE(nn.Module):
     def __init__(self, 
@@ -62,9 +58,21 @@ class GMMVAE(nn.Module):
 
     def encode(self, x):
         h = self.encoder(x)
-        means = rearrange(self.means(h), "b (c l) -> b c l", c=self.n_components, l=self.latent_dim) if "means" in self.to_predict else self.prior_means
-        log_vars = rearrange(self.log_vars(h), "b (c l) -> b c l", c=self.n_components, l=self.latent_dim) if "covs" in self.to_predict else self.prior_covs
-        weights = torch.softmax(self.mixture_weights(h), dim=1) if "weights" in self.to_predict else self.prior_weights # (batch_size, n_components) sum up to 1
+        batch_size = x.size(0)
+        if "means" in self.to_predict:
+            means = rearrange(self.means(h), "b (c l) -> b c l", c=self.n_components, l=self.latent_dim)
+        else:
+            means = repeat(self.prior_means, "c l -> b c l", b=batch_size)
+
+        if "covs" in self.to_predict:
+            log_vars = rearrange(self.log_vars(h), "b (c l) -> b c l", c=self.n_components, l=self.latent_dim)
+        else:
+            log_vars = repeat(torch.log(self.prior_covs), "c l -> b c l", b=batch_size) # !!! covs -> logvar
+        
+        if "weights" in self.to_predict:
+            weights = torch.softmax(self.mixture_weights(h), dim=1)
+        else:
+            weights = repeat(self.prior_weights, "c -> b c", b=batch_size)
         return means, log_vars, weights
     
     def decode(self, z):
@@ -100,12 +108,13 @@ class GMMVAE(nn.Module):
         log_vars: (batch_size, n_components, latent_dim)
         weights: (batch_size, n_components)
         """
+        batch_size = means.size(0)
         # One component per sample
         components = torch.argmax(weights, dim=1) # argmax since it's not intended for training
-        
         # Means and logvars for selected components
-        selected_means = means[:, components] # (batch_size, latent_dim)
-        selected_log_vars = log_vars[:, components] # (batch_size, latent_dim)
+        batch_indices = torch.arange(batch_size, device=means.device)
+        selected_means = means[batch_indices, components] # (batch_size, latent_dim)
+        selected_log_vars = log_vars[batch_indices, components] # (batch_size, latent_dim)
         
         # Reparameterize
         std = torch.exp(0.5 * selected_log_vars)
