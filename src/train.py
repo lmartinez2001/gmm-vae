@@ -98,11 +98,10 @@ if __name__ == "__main__":
                 prior_cov=prior_cov,
                 n_epochs=n_epochs,
                 lr=lr,
-                batch_size=batch_size
+                batch_size=batch_size,
                 beta=beta,
                 sample_interval=sample_interval,
-                training_samples=60000//subset_ratio,
-                )    
+                training_samples=60000//subset_ratio)    
 
     train_dataset, test_dataset = load_MNIST("./data", subset_ratio=3)
 

@@ -1,14 +1,18 @@
 import os
 import json
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pickle
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
+
 import torchvision.transforms as T
 import torchvision.datasets as datasets
 from torchvision.utils import make_grid
-import matplotlib.pyplot as plt
-import pickle
-import numpy as np
+
 
 # ==> Utily functions to save files
 def save_params(root_path: str, **kwargs):
@@ -55,7 +59,7 @@ def load_MNIST(root: str, subset_ratio: int = 1):
     return train_dataset, test_dataset
 
 
-def visualize(model: nn.Module, save_path: str, test_loader, device: str, epoch: int):
+def visualize(model: nn.Module, save_path: str, test_loader: DataLoader, device: str, epoch: int):
     model.eval()
 
     # ==> Generate samples
@@ -76,14 +80,21 @@ def visualize(model: nn.Module, save_path: str, test_loader, device: str, epoch:
     for data, label in test_loader:
         data = data.to(device) 
         with torch.no_grad():
-            z, means, log_vars, weights, components = model.project_to_latent(data)
+            z, _, _, _, _ = model.project_to_latent(data)
             all_z.append(z.cpu())
             all_labels.append(label)
 
     to_show = torch.cat(all_z, dim=0)
     c = torch.cat(all_labels, dim=0)
-    plt.figure()
-    plt.scatter(to_show[:,1], to_show[:,0], c=c, cmap="plasma", alpha=0.3, s=1)
+    # One with no axis
+    plt.figure(figsize=(10,10))
+    plt.scatter(to_show[:,1], to_show[:,0], c=c, cmap="tab10", alpha=0.3, s=1)
     plt.axis("off")
+    plt.savefig(os.path.join(save_path, f"test_set_latent_epoch{epoch}.png"), bbox_inches='tight', transparent=True, pad_inches=0.0, dpi=300)
+    plt.close()
+
+    # One with axis
+    plt.figure(figsize=(10,10))
+    plt.scatter(to_show[:,1], to_show[:,0], c=c, cmap="tab10", alpha=0.3, s=1)
     plt.savefig(os.path.join(save_path, f"test_set_latent_epoch{epoch}.png"), bbox_inches='tight', transparent=True, pad_inches=0.0, dpi=300)
     plt.close()
