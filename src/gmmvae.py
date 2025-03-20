@@ -10,6 +10,7 @@ from einops import rearrange
 class GMMVAE(nn.Module):
     def __init__(self, input_dim=784, latent_dim=2, n_components=10, components_init: str = "circle"):
         super().__init__()
+        assert components_init in ["circle", "random"], "Components_init must be either circle or random"
         self.latent_dim = latent_dim
         self.n_components = n_components
         self.input_dim = input_dim

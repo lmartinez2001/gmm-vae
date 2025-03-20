@@ -12,49 +12,52 @@ def gaussian_w2_diagonal(m0, m1, cov0, cov1):
     return diff + trace_term
 
 
-def gmm_w2_distance(means1, covs1, weights1, means2, covs2, weights2):
+def gmm_w2_distance(pred_means, pred_covs, pred_weights, prior_means, prior_covs, prior_weights):
     """
     Compute a discrete OT-based distance between two GMMs (with diagonal covariances)
     by matching each component with cost given by the Gaussian W2 distance.
-    means1: (batch_size, n_components, latent_dim)
-    covs1: (batch_size, n_components, latent_dim)
-    weights1: (batch_size, n_components)
+    pred_means: (batch_size, n_components, latent_dim)
+    pred_covs: (batch_size, n_components, latent_dim)
+    pred_weights: (batch_size, n_components)
 
-    means2: (n_components, latent_dim)
-    covs2: (n_components, latent_dim)
-    weights2: (n_components,)
+    prior_means: (n_components, latent_dim)
+    prior_covs: (n_components, latent_dim)
+    prior_weights: (n_components,)
     """
-    batch_size = means1.shape[0]
-    total_dist = 0.0
+    batch_size = pred_means.shape[0]
+    K = pred_means.shape[1]
+    L = prior_means.shape[0]
+    
+    batch_distances = torch.zeros(batch_size, device=pred_means.device)
 
    # Process each sample in the batch
     for b in range(batch_size):
         # Get the GMM for this sample
-        sample_means1 = means1[b]  # (n_components, latent_dim)
-        sample_covs1 = covs1[b]    # (n_components, latent_dim)
-        sample_weights1 = weights1[b]  # (n_components,)
+        sample_pred_means = pred_means[b]  # (n_components, latent_dim)
+        sample_pred_covs = pred_covs[b]    # (n_components, latent_dim)
+        pred_sample_weights = pred_weights[b]  # (n_components,)
         
         # Build cost matrix for this sample
-        K = sample_means1.shape[0]
-        L = means2.shape[0]
-        cost_matrix = torch.zeros(K, L, device=means1.device)
         
+
+        cost_matrix = torch.zeros(K, L, device=pred_means.device)
         for k in range(K):
             for l in range(L):
                 cost_matrix[k, l] = gaussian_w2_diagonal(
-                    sample_means1[k], means2[l], 
-                    sample_covs1[k], covs2[l]
+                    sample_pred_means[k], prior_means[l], 
+                    sample_pred_covs[k], prior_covs[l]
                 )
         
         # Convert to NumPy for OT solver
-        cost_np = cost_matrix.detach().cpu().numpy()
-        w1_np = sample_weights1.detach().cpu().numpy()
-        w2_np = weights2.detach().cpu().numpy()
+        # cost_np = cost_matrix.detach().cpu().numpy()
+        # w1_np = pred_sample_weights.detach().cpu().numpy()
+        # w2_np = prior_weights.detach().cpu().numpy()
         
         # Compute OT cost for this sample
-        dist = ot.emd2(w1_np, w2_np, cost_np)
-        # dist = ot.emd2(sample_weights1, weights2, cost_matrix)
-        total_dist += dist
+        # dist = ot.emd2(w1_np, w2_np, cost_np)
+        dist = ot.emd2(pred_sample_weights, prior_weights, cost_matrix)
+        batch_distances[b] = dist
+        # total_dist += dist
 
-    return torch.tensor(total_dist/batch_size, dtype=means1.dtype, device=means1.device)
-    # return total_dist/batch_size
+    # return torch.tensor(total_dist/batch_size, dtype=pred_means.dtype, device=pred_means.device)
+    return torch.mean(batch_distances)

@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Subset
-import torchvision.transforms as T
-import torchvision.datasets as datasets
+from torch.utils.data import DataLoader
 
 from gmmvae import GMMVAE
 from gmmot import gmm_w2_distance
@@ -75,11 +73,12 @@ if __name__ == "__main__":
     latent_dim = 2
     n_components = 10
     n_epochs = 40
-    lr = 0.001
+    lr = 0.0005
     batch_size = 256
-    beta = 1.0
+    beta = 5.0
     sample_interval = 5
     subset_ratio = 3
+    components_init = "circle"
 
     save_root = os.path.join("results", str(uuid.uuid1()))
     os.makedirs(save_root)
@@ -89,13 +88,13 @@ if __name__ == "__main__":
                 latent_dim=latent_dim,
                 n_components=n_components,
                 beta=beta,
-                training_samples=60000//subset_ratio
-                )
-    
-    transform = T.Compose([
-        T.ToTensor()
-    ])
-    
+                n_epochs=n_epochs,
+                sample_interval=sample_interval,
+                training_samples=60000//subset_ratio,
+                components_init=components_init,
+                lr=lr,
+                batch_size=batch_size
+                )    
 
     train_dataset, test_dataset = load_MNIST("./data", subset_ratio=3)
 

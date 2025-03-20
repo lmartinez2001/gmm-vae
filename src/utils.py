@@ -17,8 +17,8 @@ def save_params(root_path: str, **kwargs):
     print(f"Model params saved in {root_path}")
 
 def save_losses(root_path: str, losses: dict):
-    with open(os.path.join(root_path, "losses.pkl"), "w") as f:
-        pickle.dump(f, losses)
+    with open(os.path.join(root_path, "losses.pkl"), "wb") as f:
+        pickle.dump(losses, f)
     print(f"Losses saved in {root_path}")
 
 def load_params(root_path: str):
@@ -27,11 +27,13 @@ def load_params(root_path: str):
     print(f"Model params loaded")
     return model_params
 
-def load_ckpt(root_path: str):
-    return torch.load(os.path.join(root_path, "model.pt"))
+def load_ckpt(root_path: str, epoch: int):
+    return torch.load(os.path.join(root_path, f"model_epoch{epoch}.pt"))
 
 def load_losses(root_path: str):
-    return np.load(os.path.join(root_path, "losses.npy"), allow_pickle=True)
+    with open(os.path.join(root_path, "losses.pkl"), "rb") as f:
+        losses = pickle.load(f)
+    return losses
 
 def save_model(save_path: str, model: nn.Module, epoch: int):
     model_path = os.path.join(save_path, f"model_epoch{epoch}.pt")
