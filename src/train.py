@@ -75,10 +75,10 @@ if __name__ == "__main__":
     n_epochs = 40
     lr = 0.0005
     batch_size = 256
-    beta = 5.0
+    beta = 10.0
     sample_interval = 5
     subset_ratio = 3
-    components_init = "circle"
+    components_init = "random"
 
     save_root = os.path.join("results", str(uuid.uuid1()))
     os.makedirs(save_root)
