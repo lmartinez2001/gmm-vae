@@ -69,16 +69,21 @@ if __name__ == "__main__":
     print(f"Using {device}")
 
     # ==> Parameters
+    # For the model
     input_dim = 784
     latent_dim = 2
     n_components = 10
-    n_epochs = 40
-    lr = 0.0005
-    batch_size = 256
-    beta = 10.0
-    sample_interval = 5
-    subset_ratio = 3
     components_init = "random"
+    circle_radius = 3
+    to_predict = ["weights"]
+    prior_cov = 1.0
+    # For training
+    n_epochs = 40
+    lr = 0.001
+    batch_size = 256
+    beta = 10.0 # Weight of the MW2 loss
+    sample_interval = 5
+    subset_ratio = 3 # Subset of the full dataset
 
     save_root = os.path.join("results", str(uuid.uuid1()))
     os.makedirs(save_root)
@@ -87,13 +92,16 @@ if __name__ == "__main__":
                 input_dim=input_dim,
                 latent_dim=latent_dim,
                 n_components=n_components,
-                beta=beta,
-                n_epochs=n_epochs,
-                sample_interval=sample_interval,
-                training_samples=60000//subset_ratio,
                 components_init=components_init,
+                circle_radius=circle_radius,
+                to_predict=to_predict,
+                prior_cov=prior_cov,
+                n_epochs=n_epochs,
                 lr=lr,
                 batch_size=batch_size
+                beta=beta,
+                sample_interval=sample_interval,
+                training_samples=60000//subset_ratio,
                 )    
 
     train_dataset, test_dataset = load_MNIST("./data", subset_ratio=3)
@@ -103,7 +111,11 @@ if __name__ == "__main__":
 
     model = GMMVAE(input_dim=input_dim,
                    latent_dim=latent_dim,
-                   n_components=n_components)
+                   n_components=n_components,
+                   components_init=components_init,
+                   circle_radius=circle_radius,
+                   to_predict=to_predict,
+                   prior_cov=prior_cov)
     model = model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)

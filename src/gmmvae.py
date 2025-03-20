@@ -8,7 +8,14 @@ from scipy.optimize import linear_sum_assignment
 from einops import rearrange
 
 class GMMVAE(nn.Module):
-    def __init__(self, input_dim=784, latent_dim=2, n_components=10, components_init: str = "circle", circle_radius: float = 3.0, to_predict: list = ["weights", "means", "covs"], prior_cov: float = 1.0):
+    def __init__(self, 
+                 input_dim: int = 784, 
+                 latent_dim: int = 2, 
+                 n_components: int = 10, 
+                 components_init: str = "circle", 
+                 circle_radius: float = 3.0, 
+                 to_predict: list = ["weights", "means", "covs"], 
+                 prior_cov: float = 1.0):
         super().__init__()
         assert components_init in ["circle", "random"], "Components_init must be either circle or random"
         
@@ -87,14 +94,12 @@ class GMMVAE(nn.Module):
 
         return z, soft_assignments
 
-
     def reparameterize(self, means, log_vars, weights):
         """
         means: (batch_size, n_components, latent_dim)
         log_vars: (batch_size, n_components, latent_dim)
         weights: (batch_size, n_components)
         """
-        batch_size = means.size(0)
         # One component per sample
         components = torch.argmax(weights, dim=1) # argmax since it's not intended for training
         
