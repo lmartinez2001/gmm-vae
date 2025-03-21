@@ -1,0 +1,1 @@
+export PYTHONPATH=/home/louis/dev/mva/gen_models/project/.venv/lib/python3.10/site-packages:/home/louis/dev/mva/gen_models/project/

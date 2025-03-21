@@ -2,15 +2,14 @@ import os
 import json
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pickle
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
-import torchvision.transforms as T
-import torchvision.datasets as datasets
+
+
 from torchvision.utils import make_grid
 
 
@@ -42,21 +41,6 @@ def load_losses(root_path: str):
 def save_model(save_path: str, model: nn.Module, epoch: int):
     model_path = os.path.join(save_path, f"model_epoch{epoch}.pt")
     torch.save(model.state_dict(), model_path)
-
-
-# ==> Torch functions
-def load_MNIST(root: str, subset_ratio: int = 1):
-    transform = T.Compose([T.ToTensor()])
-    # Load train
-    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    if subset_ratio > 1:
-        train_size = len(train_dataset)
-        n_train_samples = train_size // subset_ratio
-        train_indices = np.random.choice(train_size, n_train_samples, replace=False)
-        train_dataset = Subset(train_dataset, train_indices)
-    # Load test
-    test_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    return train_dataset, test_dataset
 
 
 def visualize(model: nn.Module, save_path: str, test_loader: DataLoader, device: str, epoch: int):

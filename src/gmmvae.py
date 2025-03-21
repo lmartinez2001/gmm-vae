@@ -78,9 +78,10 @@ class GMMVAE(nn.Module):
     def decode(self, z):
         return self.decoder(z)
     
-    def gumbel_softmax_sample(self, logits, tau, eps=1e-10):
-        gumbel_noise = -torch.log(-torch.log(torch.rand_like(logits) + eps) + eps)
-        return torch.softmax((logits + gumbel_noise) / tau, dim=-1)
+    def gumbel_softmax_sample(self, weights, tau, eps=1e-10):
+        u = torch.rand_like(weights) # (batch_size, n_components)
+        gumbel_noise = -torch.log(-torch.log(u + eps) + eps)
+        return torch.softmax((torch.log(weights) + gumbel_noise) / tau, dim=-1)
 
     def reparameterize_gumbel(self, means, log_vars, weights, tau):
         """

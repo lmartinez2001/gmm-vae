@@ -15,6 +15,7 @@ from gmmot import gmm_w2_distance
 
 from einops import rearrange
 from utils import *
+from data import load_MNIST
 
 torch.manual_seed(0)
 

@@ -11,3 +11,4 @@ export.gmm
 *.pt
 *.pth
 *.json
+*.png
